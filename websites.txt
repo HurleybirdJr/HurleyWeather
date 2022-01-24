@@ -1,0 +1,5 @@
+https://darksky.net/dev/account
+https://codereview.stackexchange.com/questions/21462/python-terminal-animation
+https://www.dataquest.io/blog/python-api-tutorial/
+https://pypi.org/project/geopy/
+https://freesound.org/people/TheAtomicBrain/sounds/351880/
