@@ -1,3 +1,5 @@
+# https://docs.python.org/3/library/time.html#time.struct_time
+
 # TODO: Add comparison tool for 2 locations
 #       > Add button to enable comparison mode
 #       > Highlight difference with red and blue transparent
@@ -7,6 +9,7 @@ import requests
 import sys
 import time
 import json
+import random
 
 from geopy.geocoders import Nominatim
 
@@ -19,9 +22,9 @@ def animation_generator(length):
             yield '[' + ' ' * (length - n) + '=' + ' ' * n + ']'
 
 
-def loading(delay):
+def loading():
     animation = animation_generator(6)
-    for i in range(100):
+    for i in range(random.randint(30, 120)):
         sys.stdout.write('\r')
         sys.stdout.write(animation.__next__())
         sys.stdout.flush()
@@ -99,46 +102,82 @@ def wind_speed(speed, bearing_value):
 
 
 def get_status(api_response):
-    # print(response.status_code) # Return code via console
-    if api_response.status_code == "200":
+    print(response.status_code)  # Return code via console
+    if api_response.status_code == 200:
         pass
-    elif api_response.status_code == "301":
+    elif api_response.status_code == 301:
         print("API Server has been redirected.")
-    elif api_response.status_code == "401":
+    elif api_response.status_code == 401:
         print("User not authenticated to access API.")
         time.sleep(0.5)
         print("Check Secret Key is valid.")
-    elif api_response.status_code == "400":
+    elif api_response.status_code == 400:
         print("User sent bad request.")
-    elif api_response.status_code == "403":
+    elif api_response.status_code == 403:
         print("Access to API resources forbidden.")
-    elif api_response.status_code == "404":
+    elif api_response.status_code == 404:
         print("API resource requested doesn't exist.")
     else:
+        print("get_status function logic error")
         pass
 
 
-search_location = input("Location?: ")
-geo_locator = Nominatim(user_agent="Hurleybird Weather")
-location = geo_locator.geocode(search_location)
+def standard_api(location):
+    location_coords = obtain_coords(location)
+
+    response = requests.get(
+        "https://api.darksky.net/forecast/f6c96a08e26624b0fbe900747666a05f/" +
+        str(location_coords.latitude) + "," +
+        str(location_coords.longitude) +
+        "?units=uk2"
+    )
+
+    return response
+
+
+def time_machine_api(location):
+    print("Format: [DAY]/[MONTH]/[YEAR] [24HOUR]:[MINUTE]:[SECOND]")
+    print("Ex: 29/06/2018 15:34:10")
+
+    user_time_input = input(">: ")
+
+    try:
+        time.strptime(user_time_input, "%d/%m/%Y %H:%M:%S")
+        tt_time = 
+    finally:
+        print("done")
+
+    location_coords = obtain_coords(location)
+
+    response = requests.get(
+        "https://api.darksky.net/forecast/f6c96a08e26624b0fbe900747666a05f/" +
+        str(location_coords.latitude) + "," +
+        str(location_coords.longitude) +
+        "time" + "?units=uk2"
+    )
+
+    return response
+
+
+def obtain_coords(location):
+    geo_locator = Nominatim(user_agent="Hurleybird Weather")
+    return geo_locator.geocode(location)
+
 
 # print(location)
 # print(location.latitude, location.longitude)
 
-response = requests.get(
-    "https://api.darksky.net/forecast/f6c96a08e26624b0fbe900747666a05f/" +
-    str(location.latitude) +
-    "," +
-    str(location.longitude) +
-    "?units=uk2"
-)
+search_location = input("Location?: ")
 
 data = response.json()
 
+# Saves most recent search results in same directory for comparison
 with open("recent_data.json", 'w', encoding='utf-8') as file:
     json.dump(data, file, ensure_ascii=False, indent=4)
 
 get_status(response)
+
+loading()
 
 print("\n")
 epoch(data["currently"]["time"])
