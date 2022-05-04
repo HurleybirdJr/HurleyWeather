@@ -1,35 +1,31 @@
+# TODO: Add comparison tool for 2 locations
+#       > Add button to enable comparison mode
+#       > Highlight difference with red and blue transparent
+
 import datetime
 import requests
 import sys
 import time
-import winsound
-from os import system, name
+import json
 
-from colorama import init, Style
 from geopy.geocoders import Nominatim
 
-# sync test
 
-init(convert=True)
-
-
-def clear():
-    # for windows 
-    if name == 'nt':
-        _ = system('cls')
-
-        # for mac and linux(here, os.name is 'posix')
-    else:
-        _ = system('clear')
+def animation_generator(length):
+    while True:
+        for n in range(length + 1):
+            yield '[' + ' ' * n + '=' + ' ' * (length - n) + ']'
+        for n in range(length + 1):
+            yield '[' + ' ' * (length - n) + '=' + ' ' * n + ']'
 
 
-def loading(Delay):
-    waiting = Delay * 10
-    animation = "|/-\\"
-    for i in range(waiting):
-        time.sleep(0.1)
-        sys.stdout.write("\r" + animation[i % len(animation)])
+def loading(delay):
+    animation = animation_generator(6)
+    for i in range(100):
+        sys.stdout.write('\r')
+        sys.stdout.write(animation.__next__())
         sys.stdout.flush()
+        time.sleep(0.01667)
 
 
 # class colours:
@@ -47,127 +43,111 @@ def epoch(time_input):
 
 
 def direction(bearing_angle):
+    bearing_angle += 180
     if (337.5 < bearing_angle < 360) or (0 <= bearing_angle <= 22.5):
-        direction.direct = "N"
-        print("↑", end=" ")
+        return "↑"
     elif 22.5 < bearing_angle <= 67.5:
-        direction.direct = "NE"
-        print("↗", end=" ")
+        return "↗"
     elif 67.5 < bearing_angle <= 112.5:
-        direction.direct = "E"
-        print("→", end=" ")
+        return "→"
     elif 112.5 < bearing_angle <= 157.5:
-        direction.direct = "SE"
-        print("↘", end=" ")
+        return "↘"
     elif 157.5 < bearing_angle <= 202.5:
-        direction.direct = "S"
-        print("↓", end=" ")
+        return "↓"
     elif 202.5 < bearing_angle <= 247.5:
-        direction.direct = "SW"
-        print("↙", end=" ")
+        return "↙"
     elif 247.5 < bearing_angle <= 292.5:
-        direction.direct = "W"
-        print("←", end=" ")
+        return "←"
     elif 292.5 < bearing_angle <= 337.5:
-        direction.direct = "NW"
-        print("↖", end=" ")
+        return "↖"
     else:
         pass
 
 
-def wind_speed(Speed, Direction):
-    if Speed >= 64:  # 11-12 BNo.
-        print("Wind Speed: " + str(Speed) + Style.RESET_ALL + " mph " + Direction)
-    elif 47 <= Speed < 64:  # 9-10 Bno.
-        print("Wind Speed: " + str(Speed) + Style.RESET_ALL + " mph " + Direction)
-    elif 32 <= Speed < 47:  # 7-8 BNo.
-        print("Wind Speed: " + str(Speed) + Style.RESET_ALL + " mph " + Direction)
-    elif 19 <= Speed < 32:  # 5-6 BNo.
-        print("Wind Speed: " + str(Speed) + Style.RESET_ALL + " mph " + Direction)
-    elif 8 <= Speed < 19:  # 3-4 BNo.
-        print("Wind Speed: " + str(Speed) + Style.RESET_ALL + " mph " + Direction)
-    elif 0 <= Speed < 8:  # 0-2 BNo.
-        print("Wind Speed: " + str(Speed) + Style.RESET_ALL + " mph " + Direction)
+def wind_speed(speed, bearing_value):
+    if speed >= 64:  # 11-12 BNo.
+        print("Wind: " + str(speed) + " mph " + str(direction(bearing_value)))
+    elif 47 <= speed < 64:  # 9-10 Bno.
+        print("Wind: " + str(speed) + " mph " + str(direction(bearing_value)))
+    elif 32 <= speed < 47:  # 7-8 BNo.
+        print("Wind: " + str(speed) + " mph " + str(direction(bearing_value)))
+    elif 19 <= speed < 32:  # 5-6 BNo.
+        print("Wind: " + str(speed) + " mph " + str(direction(bearing_value)))
+    elif 8 <= speed < 19:  # 3-4 BNo.
+        print("Wind: " + str(speed) + " mph " + str(direction(bearing_value)))
+    elif 0 <= speed < 8:  # 0-2 BNo.
+        print("Wind: " + str(speed) + " mph " + str(direction(bearing_value)))
     else:
         pass
 
 
-def temperature(Temp_value):
-    if Temp_value >= 30:  # very hot
-        print("Temp: " + str(Temp_value) + Style.RESET_ALL + " °C")
-    elif 23 <= Temp_value < 30:  # hot
-        print("Temp: " + str(Temp_value) + Style.RESET_ALL + " °C")
-    elif 17 <= Temp_value < 23:  # warm
-        print("Temp: " + str(Temp_value) + Style.RESET_ALL + " °C")
-    elif 10 <= Temp_value < 17:  # mild
-        print("Temp: " + str(Temp_value) + Style.RESET_ALL + " °C")
-    elif 1 <= Temp_value < 10:  # cold
-        print("Temp: " + str(Temp_value) + Style.RESET_ALL + " °C")
-    elif Temp_value < 1:  # very cold
-        print("Temp: " + str(Temp_value) + Style.RESET_ALL + " °C")
+# def temperature(Temp_value):
+#     if Temp_value >= 30:  # very hot
+#         print("Temp: " + str(Temp_value) + "°C")
+#     elif 23 <= Temp_value < 30:  # hot
+#         print("Temp: " + str(Temp_value) + "°C")
+#     elif 17 <= Temp_value < 23:  # warm
+#         print("Temp: " + str(Temp_value) + "°C")
+#     elif 10 <= Temp_value < 17:  # mild
+#         print("Temp: " + str(Temp_value) + "°C")
+#     elif 1 <= Temp_value < 10:  # cold
+#         print("Temp: " + str(Temp_value) + "°C")
+#     elif Temp_value < 1:  # very cold
+#         print("Temp: " + str(Temp_value) + "°C")
+#     else:
+#         pass
+
+
+def get_status(api_response):
+    # print(response.status_code) # Return code via console
+    if api_response.status_code == "200":
+        pass
+    elif api_response.status_code == "301":
+        print("API Server has been redirected.")
+    elif api_response.status_code == "401":
+        print("User not authenticated to access API.")
+        time.sleep(0.5)
+        print("Check Secret Key is valid.")
+    elif api_response.status_code == "400":
+        print("User sent bad request.")
+    elif api_response.status_code == "403":
+        print("Access to API resources forbidden.")
+    elif api_response.status_code == "404":
+        print("API resource requested doesn't exist.")
     else:
         pass
 
 
-delay = 2
-
-loading(delay)
-
-winsound.PlaySound("open.wav", winsound.SND_ASYNC)
-
-clear()
-
-print("""                                                                            
-█ █           █ █   █ █ █ █ █ █ █     █ █ █ █ █    █ █ █ █ █ █ █ █   █ █       █ █   █ █ █ █ █ █ █   █ █ █ █ █ █  
-█ █           █ █   █ █             █ █       █ █        █ █         █ █       █ █   █ █             █ █       █ █ 
-█ █     █     █ █   █ █ █ █ █       █ █ █ █ █ █ █        █ █         █ █ █ █ █ █ █   █ █ █ █ █       █ █ █ █ █ █   
-█ █   █ █ █   █ █   █ █             █ █       █ █        █ █         █ █       █ █   █ █             █ █       █ █ 
-  █ █ █   █ █ █     █ █ █ █ █ █ █   █ █       █ █        █ █         █ █       █ █   █ █ █ █ █ █ █   █ █       █ █                                                                                         
-""")
-
-address = input("Search: ")
+search_location = input("Location?: ")
 geo_locator = Nominatim(user_agent="Hurleybird Weather")
-location = geo_locator.geocode(address)
+location = geo_locator.geocode(search_location)
 
-print(location)
-print(location.latitude, location.longitude)
+# print(location)
+# print(location.latitude, location.longitude)
 
 response = requests.get(
-    "https://api.darksky.net/forecast/f6c96a08e26624b0fbe900747666a05f/" + str(location.latitude) + "," + str(
-        location.longitude) + "?units=uk2")
+    "https://api.darksky.net/forecast/f6c96a08e26624b0fbe900747666a05f/" +
+    str(location.latitude) +
+    "," +
+    str(location.longitude) +
+    "?units=uk2"
+)
+
 data = response.json()
 
-# print(response.status_code)
-if response.status_code == "200":
-    pass
-elif response.status_code == "301":
-    print("API Server has been redirected.")
-elif response.status_code == "401":
-    print("User not authenticated to access API.")
-    time.sleep(0.5)
-    print("Check Secret Key is valid.")
-elif response.status_code == "400":
-    print("User sent bad request.")
-elif response.status_code == "403":
-    print("Access to API resources forbidden.")
-elif response.status_code == "404":
-    print("API resource requested doesn't exist.")
-else:
-    pass
+with open("recent_data.json", 'w', encoding='utf-8') as file:
+    json.dump(data, file, ensure_ascii=False, indent=4)
+
+get_status(response)
 
 print("\n")
-timeInput = data["currently"]["time"]
-epoch(timeInput)
-print("Weather: " + data["currently"]["summary"])
-rainChance = int(data["currently"]["precipProbability"]) * 100
-print("Chance of rain: " + str(rainChance) + "%")
-temp2 = data["currently"]["temperature"]
-temp = round(temp2, 0)
-temperature(temp)
-bearing = data["currently"]["windBearing"]
-direction(bearing)
-windSpeed = data["currently"]["windSpeed"]
-speed = round(windSpeed, 0)
-wind_speed(int(speed), direction.direct)
-
-input("\nPress ENTER to exit.")
+epoch(data["currently"]["time"])
+print("Weather: " + data["currently"]["icon"])
+print("Temp: " + str(int(round(data["currently"]["temperature"], 0))) + "°C")
+print("Precip: " + str(int(data["currently"]["precipProbability"]) * 100) + "%")
+wind_speed(int(round(data["currently"]["windSpeed"], 0)), data["currently"]["windBearing"])
+print("Pressure: " + str(int(round(data["currently"]["pressure"], 0))) + " hPa")
+print("Humidity: " + str(int(data["currently"]["humidity"]) * 100) + "%")
+print("Dew Pt: " + str(int(round(data["currently"]["dewPoint"], 0))) + "°C")
+print("UV Index: " + str(int(data["currently"]["uvIndex"])))
+print("Visibility: " + str(int(data["currently"]["visibility"])))
