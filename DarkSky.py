@@ -102,24 +102,34 @@ def wind_speed(speed, bearing_value):
 
 
 def get_status(api_response):
-    print(response.status_code)  # Return code via console
+    is_valid = False
+    print(api_response.status_code)  # Return code via console
     if api_response.status_code == 200:
+        is_valid = True
         pass
     elif api_response.status_code == 301:
         print("API Server has been redirected.")
+        is_valid = False
     elif api_response.status_code == 401:
         print("User not authenticated to access API.")
         time.sleep(0.5)
         print("Check Secret Key is valid.")
+        is_valid = False
     elif api_response.status_code == 400:
         print("User sent bad request.")
+        is_valid = False
     elif api_response.status_code == 403:
         print("Access to API resources forbidden.")
+        is_valid = False
     elif api_response.status_code == 404:
         print("API resource requested doesn't exist.")
+        is_valid = False
     else:
         print("get_status function logic error")
+        is_valid = False
         pass
+
+    return is_valid
 
 
 def standard_api(location):
@@ -137,26 +147,32 @@ def standard_api(location):
 
 def time_machine_api(location):
     print("Format: [DAY]/[MONTH]/[YEAR] [24HOUR]:[MINUTE]:[SECOND]")
-    print("Ex: 29/06/2018 15:34:10")
+    print("Ex: 2008-08-24 08:34:02")
 
     user_time_input = input(">: ")
 
+    # Time Travel API Format -> [YYYY]-[MM]-[DD]T[HH]:[MM]:[SS]
+
     try:
-        time.strptime(user_time_input, "%d/%m/%Y %H:%M:%S")
-        tt_time = 
+        user_time_input_list = list(user_time_input)
+        user_time_input_list[10] = "T"
+        user_time_input = "".join(user_time_input_list)
     finally:
-        print("done")
+        pass
 
     location_coords = obtain_coords(location)
 
     response = requests.get(
         "https://api.darksky.net/forecast/f6c96a08e26624b0fbe900747666a05f/" +
         str(location_coords.latitude) + "," +
-        str(location_coords.longitude) +
-        "time" + "?units=uk2"
+        str(location_coords.longitude) + "," +
+        str(user_time_input) + "?units=uk2"
     )
 
-    return response
+    if get_status(response):
+        return response
+    else:
+        pass
 
 
 def obtain_coords(location):
@@ -167,26 +183,30 @@ def obtain_coords(location):
 # print(location)
 # print(location.latitude, location.longitude)
 
-search_location = input("Location?: ")
+try:
+    search_location = input("Location?: ")
 
-data = response.json()
+    # data = standard_api(search_location).json()
+    data = time_machine_api(search_location).json()
 
-# Saves most recent search results in same directory for comparison
-with open("recent_data.json", 'w', encoding='utf-8') as file:
-    json.dump(data, file, ensure_ascii=False, indent=4)
+    # Saves most recent search results in same directory for comparison
+    with open("recent_data.json", 'w', encoding='utf-8') as file:
+        json.dump(data, file, ensure_ascii=False, indent=4)
 
-get_status(response)
+    loading()
 
-loading()
+    print("\n")
+    epoch(data["currently"]["time"])
+    print("Weather: " + data["currently"]["icon"])
+    print("Temp: " + str(int(round(data["currently"]["temperature"], 0))) + "°C")
+    print("Precip: " + str(int(data["currently"]["precipProbability"]) * 100) + "%")
+    wind_speed(int(round(data["currently"]["windSpeed"], 0)), data["currently"]["windBearing"])
+    print("Pressure: " + str(int(round(data["currently"]["pressure"], 0))) + " hPa")
+    print("Humidity: " + str(int(data["currently"]["humidity"]) * 100) + "%")
+    print("Dew Pt: " + str(int(round(data["currently"]["dewPoint"], 0))) + "°C")
+    print("UV Index: " + str(int(data["currently"]["uvIndex"])))
+    print("Visibility: " + str(int(data["currently"]["visibility"])))
 
-print("\n")
-epoch(data["currently"]["time"])
-print("Weather: " + data["currently"]["icon"])
-print("Temp: " + str(int(round(data["currently"]["temperature"], 0))) + "°C")
-print("Precip: " + str(int(data["currently"]["precipProbability"]) * 100) + "%")
-wind_speed(int(round(data["currently"]["windSpeed"], 0)), data["currently"]["windBearing"])
-print("Pressure: " + str(int(round(data["currently"]["pressure"], 0))) + " hPa")
-print("Humidity: " + str(int(data["currently"]["humidity"]) * 100) + "%")
-print("Dew Pt: " + str(int(round(data["currently"]["dewPoint"], 0))) + "°C")
-print("UV Index: " + str(int(data["currently"]["uvIndex"])))
-print("Visibility: " + str(int(data["currently"]["visibility"])))
+except AttributeError:
+    print("Failed to proceed with API call.")
+    print("Please check location is spelt correctly and is valid.")
